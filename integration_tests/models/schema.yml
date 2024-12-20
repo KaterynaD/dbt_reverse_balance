@@ -1,0 +1,19 @@
+version: 2
+
+models:
+
+  - name: fact_orders_rb_from_stream
+    description: "To test creating reverse balamce table from a Snowflake stream"
+    tests:
+      - dbt_utils.equality:
+          compare_model: ref('test_data_fact_orders_rb_from_stream')
+          compare_columns:
+            - FACT_ID
+            - ISREVERSE
+            - ORDR_UNIQUE_KEY
+            - ORDER_ID
+            - PART_ID
+            - ORDERDATE
+            - QUANTITY
+            - LOADTYPE                                       
+          precision: 4      
