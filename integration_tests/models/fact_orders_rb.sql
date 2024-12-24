@@ -8,6 +8,8 @@
 
    additive_measures_cols=['quantity'],
 
+   loaddate='LoadDate',
+
    other_cols=['OrderDate','LineStatus'],
 
    RecordStatus_col_name='RecordStatus',

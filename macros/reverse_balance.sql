@@ -11,6 +11,14 @@
 
 {% set as_at_col_name = config['as_at_col_name'] %}
 
+{% set loaddate_col_name = config['loaddate'] %}
+
+{% for item in other_cols %}
+ {% if item|upper ==loaddate_col_name|upper or item|upper == as_at_col_name|upper  %}
+  {% do other_cols.pop(other_cols.index(item)) %}
+ {% endif %}
+{% endfor %}
+
 {# adding stg. to each unique key column #}
 {% set stg_unique_key_cols = [] %}
 {% set f_unique_key_cols = [] %}
@@ -66,7 +74,10 @@ lag({{ as_at_col_name }}) over (partition by  {% for uc in unique_key_cols %}  {
 {% for c in other_cols %} 
 lag({{ c }}) over (partition by  {% for uc in unique_key_cols %}  {{ uc }} {% if not loop.last %},{% endif %} {% endfor %} order by {{ as_at_col_name }}) prev_{{ c }} {% if not loop.last %},{% endif %}
 {% endfor %}
-
+--
+{% if loaddate_col_name|length > 0 %}
+ , {{ loaddate_col_name }}
+{% endif %}
 --
 from raw_data
 )
@@ -90,6 +101,11 @@ prev_{{ c }}  as {{ c }},
 {{ as_at_col_name }},
 prev_{{ as_at_col_name }} reversed{{ as_at_col_name }},
 case when {% for c in additive_measures_cols %} prev_{{ c }} is null  {% if not loop.last %} and {% endif %} {% endfor %} then 'N' else 'Y' end  HasReversedRecord
+--
+{% if loaddate_col_name|length > 0 %}
+ , {{ loaddate_col_name }}
+{% endif %}
+--
 from data stg
 where 
 {% for c in additive_measures_cols %} 
@@ -117,6 +133,11 @@ select
 {{ as_at_col_name }},
 null reversed{{ as_at_col_name }},
 case when {% for c in additive_measures_cols %} prev_{{ c }} is null  {% if not loop.last %} and {% endif %} {% endfor %} then 'N' else 'Y' end HasReversedRecord
+--
+{% if loaddate_col_name|length > 0 %}
+ , {{ loaddate_col_name }}
+{% endif %}
+--
 from data
 )
 {% if create_flg %}
@@ -176,6 +197,11 @@ stg.{{ unique_key_col_name }},
 {% if RecordStatus_col_name|length > 0 %}
  , case when stg.is_reverse='Y' then 'Closed' else 'Active' end {{ RecordStatus_col_name }}
 {% endif %}
+
+{% if loaddate_col_name|length > 0 %}
+ , stg.{{ loaddate_col_name }}
+{% endif %}
+
 from stg_data stg
 {% if LoadType_col_name|length > 0 %}
  left outer join reverse_data r
@@ -225,6 +251,10 @@ stg.{{ as_at_col_name }}
 {% if RecordStatus_col_name|length > 0 %}
  , 'Closed'  {{ RecordStatus_col_name }}
 {% endif %}
+
+{% if loaddate_col_name|length > 0 %}
+ , stg.{{ loaddate_col_name }}
+{% endif %}
 from reverse_data r
 join {{ target }} f
 on r.{{ fact_id_col_name }} = f.{{ fact_id_col_name }}
@@ -240,10 +270,38 @@ where HasReversedRecord='N'
 
 {% macro reverse_balance_insert(target, config, sql) %}
 
+{% set unique_key_cols = config['unique_key_cols'] %}
+
+{% set as_at_col_name = config['as_at_col_name'] %}
+
+{# adding stg. to each unique key column #}
+{% set stg_unique_key_cols = [] %}
+
+{% for item in unique_key_cols %}
+  {% do stg_unique_key_cols.append('stg.'~item) %}
+{% endfor %}
+
 {% set RecordStatus_col_name = config['RecordStatus_col_name'] %}
 {% set fact_id_col_name = config['fact_id_col_name']|default('fact_id', true) %}
 {# sql to load new data is the same as to create table #}
 {% set new_data_sql = dbt_reverse_balance.reverse_balance_build_table(config = config, sql = model['compiled_code'],create_flg=false, target=target) %}
+
+{% set fact_id_hash = snapshot_hash_arguments(stg_unique_key_cols +  ['stg.'~as_at_col_name, '\'N\'']) %}
+
+{% set fact_id_hash_reversed = snapshot_hash_arguments(stg_unique_key_cols+ ['stg.'~as_at_col_name, '\'Y\'']) %}
+
+/*delete if the same staging data are loaded */
+
+delete from {{ target }}
+using 
+(
+ {{ sql }}
+) stg
+where 
+(
+   {{ fact_id_hash }} =    {{ target }}.{{ fact_id_col_name }}
+or {{ fact_id_hash_reversed }} = {{ target }}.{{ fact_id_col_name }}
+);
 
 insert into {{ target }}
 {{ new_data_sql }}
