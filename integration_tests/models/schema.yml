@@ -1,4 +1,16 @@
 version: 2
+sources:
+  - name: dwh
+    tables:
+      - name: stg_orders      
+        columns:
+          - name: ORDERDATE
+          - name: ORDER_ID
+          - name: PART_ID
+          - name: QUANTITY
+          - name: BOOKDATE
+          - name: LINESTATUS
+          - name: LOADDATE
 
 models:
 
@@ -17,3 +29,25 @@ models:
             - QUANTITY
             - LOADTYPE                                       
           precision: 4      
+
+  - name: fact_orders_rb
+    description: "To test creating reverse balamce table from a staging table with soft deletes and updates"
+    tests:
+      - dbt_utils.equality:
+          compare_model: ref('test_data_fact_orders_rb')
+          compare_columns:
+            - FACT_ORDERS_ID
+            - IS_REVERSE
+            - FACT_ORDERS_ID_REPLACED
+            - ORDR_UNIQUE_KEY
+            - ORDER_ID
+            - PART_ID
+            - ORDERDATE
+            - LINESTATUS
+            - QUANTITY
+            - BOOKDATE
+            - LOADTYPE
+            - RECORDSTATUS                                 
+          precision: 4               
+
+          

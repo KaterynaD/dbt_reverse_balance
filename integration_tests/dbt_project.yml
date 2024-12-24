@@ -16,5 +16,8 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
+vars:
+  loaddate: "1900-01-01"
+
 
 
