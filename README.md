@@ -38,10 +38,10 @@ The package transformation adds many columns, and you can choose the names.
 
 These columns are optional. If you do not provide these parameters, the columns are not added.
 
-- **RecordStatus_col_name** is to highlight the status of the records in the table: **Active** for the records currently active and **Closed** for reversed. Population of the column requires additional look up to the target table and can impact the performance.
-- **ReverseFlg_col_name** is a part of the target table primary key but optional as a separate column. It contains N for all records, except Y for records added to reverse previous measure values. (_Only materialization from a table. It always exists in the table materialized from a stream as_ **_isReverse_** _column)_.
-- **LoadType_col_name** is a service column to further explain the current record in the table. It contains Insert, Update, Delete or Reverse.
-- **LoadDate_col_name** is a column to track load date. It can be the same column as in the underlying staging table or Current Date from the query. (_Only materialization from a table_)
+- **RecordStatus_col_name** is to highlight the status of the records in the table: **Active** for the records currently active and **Closed** for reversed. Population of the column requires additional look up to the target table and can impact the performance.
+- **ReverseFlg_col_name** is a part of the target table primary key but optional as a separate column. It contains "N" for all records, except "Y" for records added to reverse previous measure values. (_Only materialization from a table. It always exists in the table materialized from a stream as_ **_isReverse_** _column)_.
+- **LoadType_col_name** is a service column to further explain the current record in the table. It contains "Insert", "Update", "Delete" or "Reverse".
+- **LoadDate_col_name** is a column to track load date. It can be the same column as in the underlying staging table or a current date from the query. (_Only materialization from a table_)
 
 ## How do I use the dbt package?
 
@@ -50,7 +50,7 @@ These columns are optional. If you do not provide these parameters, the columns 
 To use this dbt package, you must have the following:
 
 - Snowflake, Redshift or PostgreSQL destination. I did not test the materialization in BigQuery, but most likely it will work.
-- A Snowflake table and the corresponding stream or table with soft deletes and updates (history of changes). The materialization expects deletes as 0 measures. If they are negative in your table or there is just isDeleted Flag yes or True, you need to change them to 0.
+- A Snowflake table and the corresponding stream or table with soft deletes and updates (history of changes). The materialization expects deletes as 0 measures. If they are negative in your table or there is just isDeleted Flag "Y" orr True, you need to change them to 0.
 
 ### Step 2: Install the package
 
