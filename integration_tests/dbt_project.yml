@@ -2,7 +2,7 @@ name: 'integration_tests'
 version: '1.0.0'
 
 # This setting configures which "profile" dbt uses for this project.
-profile: 'integration_tests_snowflake'
+profile: 'integration_tests'
 
 seed-paths: ["seeds"]
 model-paths: ["models"]
